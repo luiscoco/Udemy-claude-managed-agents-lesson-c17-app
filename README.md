@@ -42,26 +42,69 @@ CLAUDE_MANAGED_ENVIRONMENT_ID=your_environment_id
 PORT=3017
 ```
 
-## How the application was developed
+## How the app was build
 
-The browser collects inputs; the Node host validates requests; the lesson implementation produces observable evidence. The architecture page walks through the real source with numbered steps, prerequisite configuration, source filenames and code excerpts.
+### 1. Plan tool availability and permission separately
 
-### Lesson implementation
+Read and glob are enabled with allow. Write enablement is selected independently, and its permission remains ask. Enabling write does not itself approve a write.
 
-[src/lesson.ts](https://github.com/luiscoco/Udemy-claude-managed-agents-lesson-c17-app/blob/main/src/lesson.ts)
+Source: [src/lesson.ts](src/lesson.ts#L13)
 
 ```typescript
-  async run(input) {
-
-const tools=[{name:"read",enabled:true,permission:"allow"},{name:"glob",enabled:true,permission:"allow"},{name:"write",enabled:flag(input,"includeWrite"),permission:"ask"}];
-const bytes=text(input,"outputText"), reviewed=/^Status: reviewed\s*$/m.test(bytes);
-return report(reviewed?"passed":"rejected",reviewed?"The local artifact satisfies the review marker":"The actual content lacks the required marker",{reviewed,sha256:hash(bytes),tools,outputPath:"/mnt/session/outputs/draft.md"},["Keep uploaded input read-only","Plan a separate output copy","Check actual bytes rather than agent claims"]);
-
-  }
-};
+const tools = [
+  { name: "read", enabled: true, permission: "allow" },
+  { name: "glob", enabled: true, permission: "allow" },
+  { name: "write", enabled: flag(input, "includeWrite"), permission: "ask" },
+];
 ```
 
-Read the architecture page for the remaining source excerpts and explanations, including input handling and optional provider behavior. The diagram describes this application, rather than implying that an external integration has been implemented.
+### 2. Verify artifact contents rather than a success claim
+
+The local output must contain the reviewed status marker. The result hashes the actual text and shows the planned output path; it does not upload a file, run a cloud tool or copy bytes into that path.
+
+Source: [src/lesson.ts](src/lesson.ts#L14) · selected statements
+
+```typescript
+const bytes = text(input, "outputText"),
+  reviewed = /^Status: reviewed\s*$/m.test(bytes);
+
+return report(
+  reviewed ? "passed" : "rejected",
+  reviewed
+    ? "The local artifact satisfies the review marker"
+    : "The actual content lacks the required marker",
+  {
+    reviewed,
+    sha256: hash(bytes),
+    tools,
+    outputPath: "/mnt/session/outputs/draft.md",
+  },
+  [
+    "Keep uploaded input read-only",
+    "Plan a separate output copy",
+    "Check actual bytes rather than agent claims",
+  ],
+);
+```
+
+### Check your understanding
+
+Run **Verify the reviewed draft** in the application. Compare the result with these scenario expectations:
+
+```json
+{
+  "input": {
+    "outputText": "Status: reviewed\nAuthor: student",
+    "includeWrite": true
+  },
+  "expectedOutcome": "passed",
+  "checkEvidence": {
+    "reviewed": true
+  }
+}
+```
+
+Then try **Reject an unreviewed draft**. Its expected outcome is `rejected`; identify the condition or evidence field that explains the difference.
 
 ## Validation
 
