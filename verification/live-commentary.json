@@ -1,0 +1,29 @@
+{
+  "source": "live-provider-commentary",
+  "sessionId": "sesn_01BSLECvbccvhNbgAooNxrzV",
+  "answer": "This local experiment tests a review workflow where an uploaded input is kept read-only, a separate output copy is planned, and the result is verified by checking actual file bytes (via SHA-256) rather than trusting agent claims. The \"passed\" outcome means the local artifact matched the expected review marker. It demonstrates good practice for validating agent outputs: trust cryptographic hashes over self-reported tool results.",
+  "stopReason": "end_turn",
+  "eventTypes": [
+    "session.status_running",
+    "session.thread_status_running",
+    "user.message",
+    "span.model_request_start",
+    "agent.thinking",
+    "agent.message",
+    "span.model_request_end",
+    "session.thread_status_idle",
+    "session.usage",
+    "session.status_idle"
+  ],
+  "requestUsage": [
+    {
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "input_tokens": 665,
+      "output_tokens": 118,
+      "speed": "standard"
+    }
+  ],
+  "experimentHash": "80ac4e7f4b903f8f54f5ca8e7c6af61f8392eaca6e87aa0d623cbf88159f1efd",
+  "scope": "A real text-only model response about the local experiment. External integrations and the experiment's correctness are not certified by this response."
+}

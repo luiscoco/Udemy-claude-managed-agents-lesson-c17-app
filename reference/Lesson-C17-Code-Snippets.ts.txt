@@ -1,0 +1,29 @@
+import Anthropic from "@anthropic-ai/sdk";
+export function draftSessionParams(baseAgentId: string, version: number, environmentId: string, draftFileId: string) {
+  return {
+    agent: { type: "agent_with_overrides" as const, id: baseAgentId, version,
+      tools: [{ type: "agent_toolset_20260401" as const, default_config: { enabled: false }, configs: [
+        { name: "read" as const, enabled: true, permission_policy: { type: "always_allow" as const } },
+        { name: "glob" as const, enabled: true, permission_policy: { type: "always_allow" as const } },
+        { name: "write" as const, enabled: true, permission_policy: { type: "always_ask" as const } }
+      ] }], mcp_servers: [], skills: [] }, environment_id: environmentId,
+    resources: [{ type: "file" as const, file_id: draftFileId, mount_path: "/draft.md" }]
+  };
+}
+export async function createDraftSession(client: Anthropic, baseAgentId: string, version: number,
+  environmentId: string, authorizedFileId: string) {
+  return client.beta.sessions.create(draftSessionParams(baseAgentId, version, environmentId, authorizedFileId),
+    { maxRetries: 0, timeout: 10000 });
+}
+// Apply this predicate only to an actual file payload, not agent.message text.
+export function verifyDraft(text: string) {
+  return /^Status: reviewed\s*$/m.test(text);
+}
+export async function inspectOutput(client: Anthropic, authorizedOutputFileId: string) {
+  // Caller verifies this file is an output belonging to the intended session.
+  const response = await client.beta.files.download(authorizedOutputFileId, {}, { maxRetries: 2, timeout: 10000 });
+  const text = await response.text();
+  return { fileId: authorizedOutputFileId, reviewed: verifyDraft(text), text };
+}
+// Uploaded draft remains read-only. Write a revised copy to /mnt/session/outputs/draft.md.
+// Always inspect the resolved resource mount path rather than assuming it from a basename.
